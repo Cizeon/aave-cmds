@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
     };
 
     // Display output.
-    match args.json == true {
+    match args.json {
         true => {
             println!("{}", output?.to_json()?);
         }

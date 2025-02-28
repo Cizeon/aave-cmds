@@ -43,21 +43,31 @@ impl ReservesTokens {
 
 impl MyDisplay for ReservesTokens {
     fn to_json(&self) -> Result<String> {
+        // Create a vector or symbol, address.
+        let mut v: Vec<_> = (&self.by_symbols)
+            .into_iter()
+            .map(|p| (p.1.symbol.clone(), p.1.address))
+            .collect();
+
         // Sort the hashmap by key.
-        let mut v: Vec<_> = (&self.by_symbols).into_iter().collect();
         v.sort_by(|x, y| x.0.cmp(&y.0));
+
+        // Export to JSON string.
         Ok(serde_json::to_string(&v)?)
     }
 
     fn to_text(&self) -> Result<String> {
         let mut buf = String::new();
-        // Sort the hashmap by key.
+
+        // Create a vector of symbol, token.
         let mut v: Vec<_> = (&self.by_symbols).into_iter().collect();
+
+        // Sort the hashmap by key.
         v.sort_by(|x, y| x.0.cmp(&y.0));
 
         // // Display all tokens.
         for (symbol, token) in v {
-            buf.write_str(format!("{} - {}\n", token.address, symbol).as_str());
+            buf.write_str(format!("{} - {}\n", token.address, symbol).as_str())?;
         }
 
         Ok(buf)
