@@ -1,11 +1,8 @@
 mod contracts;
+mod reserves_tokens;
 
 use crate::prelude::*;
 use alloy::primitives::Address;
-use contracts::pool_address_provider::PoolAddressProvider;
-use contracts::pool_data_provider::PoolDataProvider;
-use std::fmt;
-
 use alloy::{
     network::{EthereumWallet, ReceiptResponse, TransactionBuilder},
     primitives::{address, utils::format_ether, U256},
@@ -14,9 +11,12 @@ use alloy::{
     sol,
     transports::Transport,
 };
+use contracts::pool_address_provider::PoolAddressProvider;
+use contracts::pool_data_provider::PoolDataProvider;
+use reserves_tokens::ReservesTokens;
+use std::fmt;
 
 pub struct AaveV3<P> {
-    provider: P,
     pub pool_address_provider: PoolAddressProvider<P>,
     pub pool_data_provider: PoolDataProvider<P>,
 }
@@ -27,64 +27,31 @@ where
 {
     pub async fn new(provider: P, address: Address) -> Result<Self> {
         // let pool_address_provider: Address = ;
-        let pool_address_provider = PoolAddressProvider::new(provider.clone(), address)
-            .await
-            .unwrap();
+        let pool_address_provider = PoolAddressProvider::new(provider.clone(), address).await?;
 
-        let address = pool_address_provider
-            .contract
-            .getPoolDataProvider()
-            .call()
-            .await?
-            ._0;
+        let pool_data_provider_address = pool_address_provider
+            .get_pool_data_provider_address()
+            .await?;
 
-        let pool_data_provider = PoolDataProvider::new(provider.clone(), address)
-            .await
-            .unwrap();
+        let pool_data_provider =
+            PoolDataProvider::new(provider.clone(), pool_data_provider_address).await?;
 
         Ok(Self {
-            provider,
             pool_address_provider,
             pool_data_provider,
         })
     }
 
-    pub async fn list_tokens(&self) -> Result<()> {
-        println!("[+] List tokens");
+    pub async fn get_reserve_tokens(&self) -> Result<ReservesTokens> {
+        let mut reserves_tokens = ReservesTokens::new();
 
-        let tokens = self
-            .pool_data_provider
-            .contract
-            .getAllReservesTokens()
-            .call()
-            .await?
-            ._0;
+        let tokens = self.pool_data_provider.get_all_tokens().await?;
 
-        for token in tokens {
-            println!("{} - {}", token.tokenAddress, token.symbol);
+        for (symbol, address) in tokens {
+            reserves_tokens.insert(symbol, address);
         }
 
-        Ok(())
-    }
-
-    /* Get information about given token.  */
-    pub async fn get_token(&self, token_symbol: String) -> Result<()> {
-        let tokens = self
-            .pool_data_provider
-            .contract
-            .getAllReservesTokens()
-            .call()
-            .await?
-            ._0;
-
-        for token in tokens {
-            if token.symbol == token_symbol {
-                println!("[+] {}: {}\n", token.tokenAddress, token.symbol);
-            }
-            // println!("{} - {}", token.tokenAddress, token.symbol);
-        }
-
-        Ok(())
+        Ok(reserves_tokens)
     }
 }
 

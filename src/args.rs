@@ -6,6 +6,9 @@ pub struct Args {
     #[clap(long, value_enum, default_value_t=Chains::Ether)]
     pub chain: Chains,
 
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
+
     #[arg(long, env = "ETH_RPC_URL")]
     pub rpc_url: Option<String>,
 

@@ -1,6 +1,9 @@
 use crate::prelude::*;
 use alloy::{primitives::Address, providers::Provider, sol};
+use std::collections::HashMap;
 use std::fmt;
+use IPoolDataProvider::TokenData;
+// use IPoolDataProvider::TokenData;
 
 sol!(
     #[sol(rpc)]
@@ -8,9 +11,8 @@ sol!(
 );
 
 pub struct PoolDataProvider<P> {
-    provider: P,
     pub address: Address,
-    pub contract: IPoolDataProvider::IPoolDataProviderInstance<(), P>,
+    contract: IPoolDataProvider::IPoolDataProviderInstance<(), P>,
 }
 
 impl<P> PoolDataProvider<P>
@@ -19,13 +21,19 @@ where
 {
     pub async fn new(provider: P, address: Address) -> Result<Self> {
         let contract = IPoolDataProvider::new(address.clone(), provider.clone());
-        // println!("tokens: {:?}", tokens);
 
-        Ok(Self {
-            provider,
-            address,
-            contract,
-        })
+        Ok(Self { address, contract })
+    }
+
+    pub async fn get_all_tokens(&self) -> Result<HashMap<String, Address>> {
+        let mut symbols: HashMap<String, Address> = HashMap::new();
+
+        let tokens = self.contract.getAllReservesTokens().call().await?._0;
+        for token in tokens {
+            symbols.insert(token.symbol, token.tokenAddress);
+        }
+
+        Ok(symbols)
     }
 }
 

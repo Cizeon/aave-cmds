@@ -8,9 +8,8 @@ sol!(
 );
 
 pub struct PoolAddressProvider<P> {
-    provider: P,
     pub address: Address,
-    pub contract: IPoolAddressesProvider::IPoolAddressesProviderInstance<(), P>,
+    contract: IPoolAddressesProvider::IPoolAddressesProviderInstance<(), P>,
 }
 
 impl<P> PoolAddressProvider<P>
@@ -20,11 +19,11 @@ where
     pub async fn new(provider: P, address: Address) -> Result<Self> {
         let contract = IPoolAddressesProvider::new(address.clone(), provider.clone());
 
-        Ok(Self {
-            provider,
-            address,
-            contract,
-        })
+        Ok(Self { address, contract })
+    }
+
+    pub async fn get_pool_data_provider_address(&self) -> Result<Address> {
+        Ok(self.contract.getPoolDataProvider().call().await?._0)
     }
 }
 

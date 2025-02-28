@@ -4,6 +4,8 @@
 
 mod aave;
 mod args;
+mod commands;
+mod display;
 mod error;
 mod prelude;
 
@@ -17,11 +19,14 @@ use alloy::{
 };
 use clap::Parser;
 use colored::Colorize;
+use display::MyDisplay;
 use reqwest::Url;
+use std::sync::Arc;
 use std::{process, str::FromStr};
 
 use crate::aave::AaveV3;
 use crate::args::Args;
+use crate::commands::TokenInfo;
 use crate::prelude::*;
 
 static ETHER_V3_ADDRESS_PROVIDER: &str = "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e";
@@ -53,7 +58,7 @@ async fn main() -> Result<()> {
             rpc_url = String::from("https://rpc.ankr.com/gnosis");
             pool_address_provider_address = String::from(RMM_ADDRESS_PROVIDER);
         }
-    }
+    };
 
     if args.rpc_url.is_some() {
         rpc_url = args.rpc_url.unwrap();
@@ -73,8 +78,9 @@ async fn main() -> Result<()> {
         process::exit(1)
     });
 
-    let provider = ProviderBuilder::new().on_http(rpc_url);
+    let provider = Arc::new(ProviderBuilder::new().on_http(rpc_url));
 
+    // Test the provider.
     provider.get_block_number().await.unwrap_or_else(|e| {
         println!("[-] RPC error: {}", e);
         process::exit(1)
@@ -86,23 +92,28 @@ async fn main() -> Result<()> {
             process::exit(1)
         });
 
+    // Retrieving smart contracts information.
     let aave_v3 = AaveV3::new(provider, pool_address_provider_address).await?;
 
-    match args.command {
+    // Execute command.
+    let output: Result<Box<dyn MyDisplay>> = match args.command {
         crate::args::Command::Token { list, get } => {
-            if list == true {
-                aave_v3.list_tokens().await?
-            }
+            let token_info = TokenInfo::new(aave_v3);
 
-            if get.is_some() {
-                aave_v3.get_token(get.unwrap()).await?
-            }
-
-            // crate::args::Command::Token { command } => match command {
-            //     crate::args::TokenCommand::List {} => aave_v3.list_tokens().await?,
+            Ok(token_info.list_tokens().await?)
         }
-        crate::args::Command::Portfolio {} => {}
-    }
+        _ => unimplemented!(),
+    };
+
+    // Display output.
+    match args.json == true {
+        true => {
+            println!("{}", output?.to_json()?);
+        }
+        false => {
+            println!("{}", output?.to_text()?);
+        }
+    };
 
     Ok(())
 }
