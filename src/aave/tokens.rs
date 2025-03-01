@@ -12,12 +12,12 @@ pub struct Token {
     symbol: String,
 }
 
-pub struct ReservesTokens {
+pub struct Tokens {
     pub by_symbols: HashMap<String, Token>,
     pub by_address: HashMap<Address, Token>,
 }
 
-impl ReservesTokens {
+impl Tokens {
     pub fn new() -> Self {
         let by_symbols = HashMap::new();
         let by_address = HashMap::new();
@@ -41,7 +41,7 @@ impl ReservesTokens {
     }
 }
 
-impl MyDisplay for ReservesTokens {
+impl MyDisplay for Tokens {
     fn to_json(&self) -> Result<String> {
         // Create a vector or symbol, address.
         let mut v: Vec<_> = (&self.by_symbols)

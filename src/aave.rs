@@ -1,6 +1,7 @@
 mod contracts;
-mod reserves_tokens;
+mod tokens;
 
+use crate::display::MyDisplay;
 use crate::prelude::*;
 use alloy::primitives::Address;
 use alloy::{
@@ -13,8 +14,8 @@ use alloy::{
 };
 use contracts::pool_address_provider::PoolAddressProvider;
 use contracts::pool_data_provider::PoolDataProvider;
-use reserves_tokens::ReservesTokens;
-use std::fmt;
+use std::fmt::{self, Write};
+use tokens::Tokens;
 
 pub struct AaveV3<P> {
     pub pool_address_provider: PoolAddressProvider<P>,
@@ -26,7 +27,6 @@ where
     P: Provider + Clone,
 {
     pub async fn new(provider: P, address: Address) -> Result<Self> {
-        // let pool_address_provider: Address = ;
         let pool_address_provider = PoolAddressProvider::new(provider.clone(), address).await?;
 
         let pool_data_provider_address = pool_address_provider
@@ -42,25 +42,45 @@ where
         })
     }
 
-    pub async fn get_reserve_tokens(&self) -> Result<ReservesTokens> {
-        let mut reserves_tokens = ReservesTokens::new();
+    pub async fn get_all_reserves_tokens(&self) -> Result<Tokens> {
+        let mut tokens = Tokens::new();
 
-        let tokens = self.pool_data_provider.get_all_tokens().await?;
-
-        for (symbol, address) in tokens {
-            reserves_tokens.insert(symbol, address);
+        for (symbol, address) in self.pool_data_provider.get_all_reserves_tokens().await? {
+            tokens.insert(symbol, address);
         }
 
-        Ok(reserves_tokens)
+        Ok(tokens)
+    }
+
+    pub async fn get_all_atokens(&self) -> Result<Tokens> {
+        let mut tokens = Tokens::new();
+
+        for (symbol, address) in self.pool_data_provider.get_all_atokens().await? {
+            tokens.insert(symbol, address);
+        }
+
+        Ok(tokens)
     }
 }
 
-impl<P> fmt::Display for AaveV3<P> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}\n{}",
-            self.pool_address_provider, self.pool_data_provider
-        )
+impl<P> MyDisplay for AaveV3<P> {
+    fn to_json(&self) -> Result<String> {
+        Ok(String::from("not implemented"))
+    }
+
+    fn to_text(&self) -> Result<String> {
+        let mut buf = String::new();
+
+        buf.write_str(
+            format!(
+                "{}: PoolAddressProvider\n",
+                self.pool_address_provider.address
+            )
+            .as_str(),
+        )?;
+
+        buf.write_str(format!("{}: PoolDataProvider", self.pool_data_provider.address).as_str())?;
+
+        Ok(buf)
     }
 }

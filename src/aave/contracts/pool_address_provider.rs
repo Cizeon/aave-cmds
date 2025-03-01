@@ -18,7 +18,6 @@ where
 {
     pub async fn new(provider: P, address: Address) -> Result<Self> {
         let contract = IPoolAddressesProvider::new(address.clone(), provider.clone());
-
         Ok(Self { address, contract })
     }
 

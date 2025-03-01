@@ -25,7 +25,18 @@ where
         Ok(Self { address, contract })
     }
 
-    pub async fn get_all_tokens(&self) -> Result<HashMap<String, Address>> {
+    pub async fn get_all_atokens(&self) -> Result<HashMap<String, Address>> {
+        let mut symbols: HashMap<String, Address> = HashMap::new();
+
+        let tokens = self.contract.getAllATokens().call().await?._0;
+        for token in tokens {
+            symbols.insert(token.symbol, token.tokenAddress);
+        }
+
+        Ok(symbols)
+    }
+
+    pub async fn get_all_reserves_tokens(&self) -> Result<HashMap<String, Address>> {
         let mut symbols: HashMap<String, Address> = HashMap::new();
 
         let tokens = self.contract.getAllReservesTokens().call().await?._0;

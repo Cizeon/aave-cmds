@@ -25,7 +25,7 @@ use std::sync::Arc;
 use std::{process, str::FromStr};
 
 use crate::aave::AaveV3;
-use crate::args::Args;
+use crate::args::{ChainArgs, CmdArgs};
 use crate::commands::TokenInfo;
 use crate::prelude::*;
 
@@ -36,32 +36,28 @@ static RMM_ADDRESS_PROVIDER: &str = "0xdAA06Cf7adCEb69fCFDe68d896818b9938984A70"
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let args = Args::parse();
+    let args = CmdArgs::parse();
 
     let mut rpc_url: String;
     let mut pool_address_provider_address: String;
 
-    match args.chain {
-        crate::args::Chains::Ether => {
-            rpc_url = String::from("https://eth.merkle.io");
-            pool_address_provider_address = String::from(ETHER_V3_ADDRESS_PROVIDER);
-        }
-        crate::args::Chains::Polygon => {
-            rpc_url = String::from("https://rpc.ankr.com/polygon");
-            pool_address_provider_address = String::from(GNOSIS_V3_ADDRESS_PROVIDER);
-        }
-        crate::args::Chains::Gnosis => {
-            rpc_url = String::from("https://rpc.ankr.com/gnosis");
-            pool_address_provider_address = String::from(POLYGON_V3_ADDRESS_PROVIDER);
-        }
-        crate::args::Chains::Rmm => {
-            rpc_url = String::from("https://rpc.ankr.com/gnosis");
-            pool_address_provider_address = String::from(RMM_ADDRESS_PROVIDER);
-        }
-    };
+    if args.chain.gnosis {
+        rpc_url = String::from("https://rpc.ankr.com/gnosis");
+        pool_address_provider_address = String::from(GNOSIS_V3_ADDRESS_PROVIDER);
+    } else if args.chain.polygon {
+        rpc_url = String::from("https://rpc.ankr.com/polygon");
+        pool_address_provider_address = String::from(POLYGON_V3_ADDRESS_PROVIDER);
+    } else if args.chain.rmm {
+        rpc_url = String::from("https://rpc.ankr.com/gnosis");
+        pool_address_provider_address = String::from(RMM_ADDRESS_PROVIDER);
+    } else {
+        // Ethereum is the default option.
+        rpc_url = String::from("https://eth.merkle.io");
+        pool_address_provider_address = String::from(ETHER_V3_ADDRESS_PROVIDER);
+    }
 
-    if args.rpc_url.is_some() {
-        rpc_url = args.rpc_url.unwrap();
+    if args.chain.rpc_url.is_some() {
+        rpc_url = args.chain.rpc_url.unwrap();
     }
 
     if args.pool_address_provider.is_some() {
@@ -97,10 +93,27 @@ async fn main() -> Result<()> {
 
     // Execute command.
     let output: Result<Box<dyn MyDisplay>> = match args.command {
-        crate::args::Command::Token { list, get } => {
+        crate::args::Command::Info {} => Ok(Box::new(aave_v3)),
+        crate::args::Command::Token {
+            list,
+            list_atokens,
+            get,
+        } => {
             let token_info = TokenInfo::new(aave_v3);
 
-            Ok(token_info.list_tokens().await?)
+            let output;
+
+            if list {
+                output = token_info.list_reserves_tokens().await?;
+            } else if list_atokens {
+                output = token_info.list_atokens().await?;
+            } else if get.is_some() {
+                unimplemented!()
+            } else {
+                unimplemented!()
+            }
+
+            Ok(output)
         }
         _ => unimplemented!(),
     };

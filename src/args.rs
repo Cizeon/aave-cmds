@@ -1,16 +1,13 @@
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
-pub struct Args {
-    #[clap(long, value_enum, default_value_t=Chains::Ether)]
-    pub chain: Chains,
+pub struct CmdArgs {
+    #[command(flatten)]
+    pub chain: ChainArgs,
 
     #[arg(long, default_value_t = false)]
     pub json: bool,
-
-    #[arg(long, env = "ETH_RPC_URL")]
-    pub rpc_url: Option<String>,
 
     #[arg(long, env = "POOL_ADDRESS_PROVIDER")]
     pub pool_address_provider: Option<String>,
@@ -25,23 +22,38 @@ pub struct Args {
     pub command: Command,
 }
 
-#[derive(Clone, Debug, clap::ValueEnum)]
-// #[group(required = false, multiple = false)]
-pub enum Chains {
-    Ether,
-    Polygon,
-    Gnosis,
-    Rmm,
+#[derive(Debug, Clone, Args)]
+#[group(multiple = false)]
+pub struct ChainArgs {
+    #[arg(long)]
+    pub ether: bool,
+
+    #[arg(long)]
+    pub polygon: bool,
+
+    #[arg(long)]
+    pub gnosis: bool,
+
+    #[arg(long)]
+    pub rmm: bool,
+
+    #[arg(long, env = "ETH_RPC_URL")]
+    pub rpc_url: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
+    Info {},
     Token {
         #[arg(long, default_value_t = false)]
         list: bool,
+
+        #[arg(long, default_value_t = false)]
+        list_atokens: bool,
 
         #[arg(long)]
         get: Option<String>,
     },
     Portfolio {},
+    Stake {},
 }

@@ -1,3 +1,3 @@
-mod token_info;
+mod token;
 
-pub use token_info::TokenInfo;
+pub use token::TokenInfo;
