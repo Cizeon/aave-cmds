@@ -6,14 +6,17 @@ pub struct CmdArgs {
     #[command(flatten)]
     pub chain: ChainArgs,
 
-    #[arg(long, default_value_t = false)]
-    pub json: bool,
+    #[arg(long, env = "ETH_RPC_URL")]
+    pub rpc_url: Option<String>,
 
     #[arg(long, env = "POOL_ADDRESS_PROVIDER")]
     pub pool_address_provider: Option<String>,
 
-    #[arg(long, env = "WALLET_ADDRESS")]
-    pub wallet_address: Option<String>,
+    #[arg(long, default_value_t = false)]
+    pub json: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub no_color: bool,
 
     #[arg(long, default_value_t = false)]
     pub verbose: bool,
@@ -36,9 +39,6 @@ pub struct ChainArgs {
 
     #[arg(long)]
     pub rmm: bool,
-
-    #[arg(long, env = "ETH_RPC_URL")]
-    pub rpc_url: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -54,6 +54,16 @@ pub enum Command {
         #[arg(long)]
         get: Option<String>,
     },
-    Portfolio {},
+    Portfolio {
+        #[command(flatten)]
+        wallet: WalletArgs,
+    },
     Stake {},
+}
+
+#[derive(Debug, Clone, Args)]
+#[group(multiple = false)]
+pub struct WalletArgs {
+    #[arg(long, env = "WALLET_ADDRESS")]
+    pub wallet_address: String,
 }

@@ -1,6 +1,7 @@
 use crate::display::MyDisplay;
 use crate::prelude::*;
 use alloy::primitives::Address;
+use colored::Colorize;
 use serde::Serialize;
 use serde_json::to_string;
 use std::fmt::{self, Write};
@@ -67,7 +68,14 @@ impl MyDisplay for Tokens {
 
         // // Display all tokens.
         for (symbol, token) in v {
-            buf.write_str(format!("{} - {}\n", token.address, symbol).as_str())?;
+            buf.write_str(
+                format!(
+                    "{} - {}\n",
+                    token.address.to_string().blue(),
+                    symbol.green()
+                )
+                .as_str(),
+            )?;
         }
 
         Ok(buf)

@@ -3,11 +3,11 @@ use crate::display::MyDisplay;
 use crate::prelude::*;
 use alloy::providers::Provider;
 
-pub struct TokenInfo<P> {
+pub struct TokenCommand<P> {
     aave_v3: AaveV3<P>,
 }
 
-impl<P> TokenInfo<P>
+impl<P> TokenCommand<P>
 where
     P: Provider + Clone,
 {
